@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
+import { takeWhile } from 'rxjs/operators';
 import { data } from '../models/data';
 import { SendDataService } from '../Services/send-data.service';
 
@@ -18,8 +19,10 @@ imageToShow: any;
 names:String="";
 branch:String="";
 address:String="";
-
-
+isImageLoading=false
+//image = '';
+//image$:Promise<any>;
+imgLoad:any
 
 data1:FormData=new FormData()
   constructor(private service:SendDataService) { 
@@ -27,6 +30,7 @@ data1:FormData=new FormData()
       "file":new FormControl(null)
     })
     this.style="style1"
+    //this.image$=this.loadImage(this.image)
     
   }
 
@@ -41,12 +45,17 @@ data1:FormData=new FormData()
     else
       this.data1.append('file',filetoupload)
 }
+update(){
+  this.imageToShow=""
+  this.ss="s"
+  this.style="style1"
+}
   public get file():any{
     return this.mygroup.get("file")
   }
   onSubmit(){
     var c=0
-    var isImageLoading=true
+    this.isImageLoading=true
     //var name=this.data1.get("file")!!.toString.name
     if(this.name!=null){
       var ext=this.name.slice(this.name!!.length-3,this.name!!.length).toLowerCase()
@@ -63,10 +72,10 @@ data1:FormData=new FormData()
         this.branch=success.Branch!!
         this.address=success.address!!
         this.ss="s1"
-        isImageLoading = false;
+       
         console.log(data)
       },error => {
-        isImageLoading = false;
+       
         console.log(error);
      })
     }
@@ -80,24 +89,32 @@ data1:FormData=new FormData()
   }
     console.log(this.name.toLowerCase())
   }
-  getBar(){
+  getBar():void{
    this.service.getBar().subscribe((data:Blob)=>{
-     if(this.name!=null){
+    this.isImageLoading=true
     this.createImageFromBlob(data);
-     }
+    this.isImageLoading=false
     console.log(data)
    })
   }
+  /*loadImage(src:string) {
+    return new Promise((resolve, reject) => {
+      resolve(src);
+    });
+  }*/
   getPie(){
     this.service.getPie().subscribe((data:Blob)=>{
+      this.isImageLoading=true
       this.createImageFromBlob(data);
+      this.isImageLoading=false
       console.log(data)
      })
   }
   getHist(){
     this.service.getHist().subscribe((data:Blob)=>{
+      this.isImageLoading=true
       this.createImageFromBlob(data);
-      console.log(data)
+      this.isImageLoading=false
      })
   }
   createImageFromBlob(image: Blob) {

@@ -1,3 +1,5 @@
+
+
 from flask import Flask,jsonify,request,send_file
 from functools import wraps
 import os
@@ -36,7 +38,7 @@ def token_required(f):
             return jsonify({'message' : 'Token is missing !!'}), 401
   
         try:
-            #decoding the payload to fetch the stored details
+            # decoding the payload to fetch the stored details
             data = jwt.decode(token, app.config['SECRET_KEY'],algorithms=("HS256"))
             current_user = mongo.db.users.find_one({'email':data["public_id"]})
         except:
@@ -143,7 +145,7 @@ def data(file):
     print(file.split("/")[2][-3:len(file.split('/')[2])])
     if(file.split("/")[2][-3:len(file.split('/')[2])]=='csv'):
         #file.save(file.split("/")[2])
-       
+        
         data=pd.read_csv(file,skipfooter=2,engine=('python'))
         dataa=data
         k=str(dataa)
@@ -169,9 +171,9 @@ def data(file):
             address=vv[0].split(":")[2] +vv[0].split(":")[3]
             address=address.replace("\\r"," ")
             #print(address)
-            data=pd.read_csv("./outputs/"+file.split("/")[2][0:-4]+".csv",skipfooter=2,engine=('python'),skiprows=1)
+            data=pd.read_csv(file,skipfooter=2,engine=('python'),skiprows=1)
         else:
-            data=pd.read_csv("./outputs/"+file.split("/")[2][0:-4]+".csv",skipfooter=2,engine=('python'))
+            data=pd.read_csv(file,skipfooter=2,engine=('python'))
         data.drop(data.columns[data.columns.str.contains('unnamed',case = False)],axis = 1, inplace = True)
         data.replace(["Unnamed: 0","Unnamed: 1"],0,inplace=True)
         #print(data.head())

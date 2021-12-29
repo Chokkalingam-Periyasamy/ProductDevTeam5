@@ -18,7 +18,7 @@
              <div class="col-sm-6">
                 <form class="for" [formGroup]="mygroup" (ngSubmit)="onSubmit()" enctype="multipart/form-data" style="margin-top:50px">
                     <div class="text-center">
-                        <input style="width:600px;" class="form-control" type="file" (change)="handleFileInput($event)" [formControl]="file" >
+                        <input style="width:600px;" (click)="update()" class="form-control" type="file" (change)="handleFileInput($event)" [formControl]="file" >
                         <br>
                         <button type="submit"
                             class="btn btn-success m-6">
@@ -47,7 +47,6 @@
         </div>
         
      <br>
-    
     </body>
 
     

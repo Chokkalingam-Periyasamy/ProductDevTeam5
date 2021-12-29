@@ -1,7 +1,7 @@
 from flask import Flask,jsonify,request,send_file
 from functools import wraps
 import os
-from flask_cors import CORS
+from flask_cors import CORS,cross_origin
 import tabula
 import random
 from flask_pymongo import PyMongo
@@ -17,9 +17,7 @@ CORS(app)
 
 app.config["MONGO_URI"]="mongodb://127.0.0.1:27017/Users"
 app.config['SECRET_KEY'] = 'your secret key'
-app.config["bar"]="./images/Screenshot_1638526552.png"
-app.config["pie"]="./images/Screenshot_1638526552.png"
-app.config["hist"]="./images/Screenshot_1638526552.png"
+
 mongo=PyMongo(app)
 UPLOAD_FOLDER = './inputs/'
 
@@ -36,7 +34,7 @@ def token_required(f):
             return jsonify({'message' : 'Token is missing !!'}), 401
   
         try:
-            #decoding the payload to fetch the stored details
+            # decoding the payload to fetch the stored details
             data = jwt.decode(token, app.config['SECRET_KEY'],algorithms=("HS256"))
             current_user = mongo.db.users.find_one({'email':data["public_id"]})
         except:
@@ -90,28 +88,37 @@ if not(os.path.isdir("./images")):
 app.config['UPLOAD_FOLDER']=UPLOAD_FOLDER
 
 @app.route("/getPie",methods=["GET"])
-@token_required
-def getPie(user):
-    print(app.config["pie"])
-    return send_file(app.config["pie"])
+def getPie():
+    data=mongo.db.images.find_one({"type":"pie"})
+    #print(data)
+    return send_file(data["path"],mimetype='image/png',as_attachment=True)
   
-@app.route("/getBar",methods=["GET"])
+@app.route('/getBar',methods=['GET'])
+@cross_origin()
 @token_required
 def getBar(user):
-    return send_file(app.config.get("bar"))
+    data=mongo.db.images.find_one({"type":"bar"})
+    print(data)
+    return send_file(data["path"],mimetype='image/png',as_attachment=True)
 
 @app.route("/getHist",methods=["GET"])
+@cross_origin()
 @token_required
 def getHist(user):
-    return send_file(app.config.get("hist"))
-    
+    data=mongo.db.images.find_one({"type":"hist"})
+    #data=list(data)
+    print(data)
+    return send_file(data["path"],mimetype='image/png',as_attachment=True)
 @app.route('/Images',methods=["GET"])
-def getimg():   
+@cross_origin()
+@token_required
+def getimg(user):   
+    print("myimg")
     return send_file("./images/Screenshot_1638526552.png",mimetype='image/png')
 
 @app.route("/",methods=["POST"])
 @token_require
-def ProcessData(user,file):
+def ProcessData(name,file):
     r=random.randint(0,2000000)
     paths=""
     try:
@@ -139,11 +146,12 @@ def ProcessData(user,file):
         return jsonify({"message":"Some Error Occured please try after sometime"}),404
 def data(file):
     rr=mongo.db.Records.drop()
+    rrr=mongo.db.images.drop()
     r=random.Random()
     print(file.split("/")[2][-3:len(file.split('/')[2])])
     if(file.split("/")[2][-3:len(file.split('/')[2])]=='csv'):
         #file.save(file.split("/")[2])
-       
+        
         data=pd.read_csv(file,skipfooter=2,engine=('python'))
         dataa=data
         k=str(dataa)
@@ -169,9 +177,9 @@ def data(file):
             address=vv[0].split(":")[2] +vv[0].split(":")[3]
             address=address.replace("\\r"," ")
             #print(address)
-            data=pd.read_csv("./outputs/"+file.split("/")[2][0:-4]+".csv",skipfooter=2,engine=('python'),skiprows=1)
+            data=pd.read_csv(file,skipfooter=2,engine=('python'),skiprows=1)
         else:
-            data=pd.read_csv("./outputs/"+file.split("/")[2][0:-4]+".csv",skipfooter=2,engine=('python'))
+            data=pd.read_csv(file,skipfooter=2,engine=('python'))
         data.drop(data.columns[data.columns.str.contains('unnamed',case = False)],axis = 1, inplace = True)
         data.replace(["Unnamed: 0","Unnamed: 1"],0,inplace=True)
         #print(data.head())
@@ -189,7 +197,7 @@ def data(file):
         values=[]
         for x in labels:
             values.append(trans[x])
-        fig = plt.figure(figsize=(15,10))
+        fig = plt.figure(figsize=(9,6))
         my_path = os.path.abspath("./images")
         data["Deposits"]=pd.to_numeric(data["Deposits"])
         plt.hist(data["Deposits"])
@@ -199,7 +207,7 @@ def data(file):
         plt.savefig(my_path+"/"+file.split("/")[2][0:-4]+"hist.png")
         plt.show()
         plt.bar(x=labels,height=values)
-        plt.title("Nmuber of Credits and Debits")
+        plt.title("Number of Credits and Debits")
         plt.xlabel("Transcation Type")
         plt.ylabel("Count")
         plt.savefig(my_path+"/"+file.split("/")[2][0:-4]+"bar.png")
@@ -230,9 +238,9 @@ def data(file):
         
         plt.savefig(my_path+"/"+file.split("/")[2][0:-4]+"pie.png")
         plt.show()
-        app.config["bar"]="./images/"+file.split("/")[2][0:-4]+"bar.png"
-        app.config["pie"]="./images/"+file.split("/")[2][0:-4]+"pie.png"
-        app.config["hist"]="./images/"+file.split("/")[2][0:-4]+"hist.png"
+        bar=mongo.db.images.insert_one({"type":"bar","path":"./images/"+file.split("/")[2][0:-4]+"bar.png"})
+        pie=mongo.db.images.insert_one({"type":"pie","path":"./images/"+file.split("/")[2][0:-4]+"pie.png"})
+        hist=mongo.db.images.insert_one({"type":"hist","path":"./images/"+file.split("/")[2][0:-4]+"hist.png"})
         return jsonify({"name":name,"Branch":branch,"address":address})
     else:
         #print(file.split("/")[2][0:-4])
@@ -284,7 +292,7 @@ def data(file):
             values.append(trans[x])
         
         #plt.show()
-        fig = plt.figure(figsize=(15,10))
+        fig = plt.figure(figsize=(9,6))
         my_path = os.path.abspath("./images")
         data["Deposits"]=pd.to_numeric(data["Deposits"])
         plt.hist(data["Deposits"])
@@ -294,7 +302,7 @@ def data(file):
         plt.savefig(my_path+"/"+file.split("/")[2][0:-4]+"hist.png")
         plt.show()
         plt.bar(x=labels,height=values)
-        plt.title("Nmuber of Credits and Debits")
+        plt.title("Number of Credits and Debits")
         plt.xlabel("Transcation Type")
         plt.ylabel("Count")
         plt.savefig(my_path+"/"+file.split("/")[2][0:-4]+"bar.png")
@@ -324,9 +332,9 @@ def data(file):
         
         plt.savefig(my_path+"/"+file.split("/")[2][0:-4]+"pie.png")
         plt.show()
-        app.config["bar"]="./images/"+file.split("/")[2][0:-4]+"bar.png"
-        app.config["pie"]="./images/"+file.split("/")[2][0:-4]+"pie.png"
-        app.config["hist"]="./images/"+file.split("/")[2][0:-4]+"hist.png"
+        bar=mongo.db.images.insert_one({"type":"bar","path":"./images/"+file.split("/")[2][0:-4]+"bar.png"})
+        pie=mongo.db.images.insert_one({"type":"pie","path":"./images/"+file.split("/")[2][0:-4]+"pie.png"})
+        hist=mongo.db.images.insert_one({"type":"hist","path":"./images/"+file.split("/")[2][0:-4]+"hist.png"})
         return jsonify({"name":name,"Branch":branch,"address":address})
       
 @app.route("/Login",methods=["POST"])

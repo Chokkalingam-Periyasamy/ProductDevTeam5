@@ -25,25 +25,22 @@ this.token=localStorage.getItem("jwt")!!
     })
        return this.httpclient.post("http://127.0.0.1:7000/",file,{headers:header})
    }
-   getBar():Observable<Blob>{
+   getBar():Observable<any>{
     var header=new HttpHeaders({
-     
       'x-access-token': localStorage.getItem("jwt")!!.toString()
     })
-     return this.httpclient.get("http://127.0.0.1:7000/getBar",{headers:header, responseType: 'blob'})
+     return this.httpclient.get(`http://127.0.0.1:7000/getBar?time=${Date.now()}`,{headers:header, responseType: 'blob'})
    }
-   getPie():Observable<Blob>{
-    var header=new HttpHeaders({
-     
+   getPie():Observable<any>{
+    var header=new HttpHeaders({ 
       'x-access-token': localStorage.getItem("jwt")!!.toString()
     })
-    return this.httpclient.get("http://127.0.0.1:7000/getPie",{headers:header, responseType: 'blob'})
+    return this.httpclient.get(`http://127.0.0.1:7000/getPie?time=${Date.now()}`,{headers:header,responseType: 'blob'})
   }
-  getHist():Observable<Blob>{
+  getHist():Observable<any>{
     var header=new HttpHeaders({
-     
       'x-access-token': localStorage.getItem("jwt")!!.toString()
     })
-    return this.httpclient.get("http://127.0.0.1:7000/getHist",{headers:header, responseType: 'blob'})
+    return this.httpclient.get(`http://127.0.0.1:7000/getHist?time=${Date.now()}`,{headers:header,responseType: 'blob'})
   }
 }
